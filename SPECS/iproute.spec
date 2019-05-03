@@ -84,7 +84,7 @@ The libnetlink static library.
 
 %build
 export CFLAGS="%{optflags}"
-export LDFLAGS="%{build_ldflags}"
+export LDFLAGS="%{__global_ldflags}"
 export LIBDIR=/%{_libdir}
 export IPT_LIB_DIR=/%{_lib}/xtables
 ./configure
