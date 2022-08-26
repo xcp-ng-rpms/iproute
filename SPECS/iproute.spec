@@ -1,19 +1,20 @@
+%global package_speccommit ef59b2b1514e6ac3bea689b224f345124788efdb
+%global usver 4.19.0
+%global xsver 3
+%global xsrel %{xsver}%{?xscount}%{?xshash}
+
 %global             cbq_version v0.7.3
 Summary:            Advanced IP routing and network device configuration tools
 Name:               iproute
 Version:            4.19.0
-Release:            1%{?dist}
+Release:            %{?xsrel}%{?dist}
 Group:              Applications/System
 URL:                http://kernel.org/pub/linux/utils/net/%{name}2/
-#Source0:            http://kernel.org/pub/linux/utils/net/%{name}2/%{name}2-%{version}.tar.xz
-
-Source0: https://repo.citrite.net/xs-local-contrib/iproute2/iproute2-4.19.0.tar.xz
-Source1: SOURCES/iproute/cbq-0000.example
-Source2: SOURCES/iproute/avpkt
-Patch1: SOURCES/iproute/0001-Add-cbq.8-as-an-alias-to-tc-cbq.8.patch
-
-
-
+#Source0:            http://kernel.org/pub/linux/utils/net/%%{name}2/%%{name}2-%%{version}.tar.xz
+Source0: iproute2-4.19.0.tar.xz
+Source1: cbq-0000.example
+Source2: avpkt
+Patch0: 0001-Add-cbq.8-as-an-alias-to-tc-cbq.8.patch
 
 # Fedora local docs changes:
 # - We ship cbq.init-v0.7.3 as cbq binary, so have a cbq.8 man page which links
@@ -34,6 +35,7 @@ BuildRequires:      pkgconfig
 BuildRequires:      linux-atm-libs-devel
 %endif
 %endif
+%{?_cov_buildrequires}
 # For the UsrMove transition period
 Conflicts:          filesystem < 3
 Provides:           /sbin/ip
@@ -81,6 +83,7 @@ The libnetlink static library.
 
 %prep
 %autosetup -p1 -n %{name}2-%{version}
+%{?_cov_prepare}
 
 %build
 export CFLAGS="%{optflags}"
@@ -88,7 +91,7 @@ export LDFLAGS="%{__global_ldflags}"
 export LIBDIR=/%{_libdir}
 export IPT_LIB_DIR=/%{_lib}/xtables
 ./configure
-make %{?_smp_mflags}
+%{?_cov_wrap} make %{?_smp_mflags}
 
 %install
 export DESTDIR='%{buildroot}'
@@ -119,6 +122,8 @@ install -D -m644 lib/libnetlink.a %{buildroot}%{_libdir}/libnetlink.a
 
 # drop these files, iproute-doc package extracts files directly from _builddir
 rm -rf '%{buildroot}%{_docdir}'
+
+%{?_cov_install}
 
 %files
 %dir %{_sysconfdir}/iproute2
@@ -165,7 +170,15 @@ rm -rf '%{buildroot}%{_docdir}'
 %{_includedir}/libnetlink.h
 %{_includedir}/iproute2/bpf_elf.h
 
+%{?_cov_results_package}
+
 %changelog
+* Fri Feb 11 2022 Ross Lagerwall <ross.lagerwall@citrix.com> - 4.19.0-3
+- CP-38416: Enable static analysis
+
+* Tue Dec 08 2020 Ross Lagerwall <ross.lagerwall@citrix.com> - 4.19.0-2
+- CP-35517: Package for koji
+
 * Fri Nov 16 2018 Nathanael Davison <nathanael.davison@citrix.com> - 4.19.0-1
 - New version 4.19.0
 
@@ -589,14 +602,14 @@ rm -rf '%{buildroot}%{_docdir}'
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_12_Mass_Rebuild
 
 * Thu Apr 23 2009 Marcela Mašláňová <mmaslano@redhat.com> - 2.6.29-3
-- new iptables (xtables) bring problems to tc, when ipt is used. 
+- new iptables (xtables) bring problems to tc, when ipt is used.
   rhbz#497344 still broken. tc_modules.patch brings correct paths to
   xtables, but that doesn't fix whole issue.
-- 497355 ip should allow creation of an IPsec SA with 'proto any' 
+- 497355 ip should allow creation of an IPsec SA with 'proto any'
   and specified sport and dport as selectors
 
 * Tue Apr 14 2009 Marcela Mašláňová <mmaslano@redhat.com> - 2.6.29-2
-- c3651bf4763d7247e3edd4e20526a85de459041b ip6tunnel: Fix no default 
+- c3651bf4763d7247e3edd4e20526a85de459041b ip6tunnel: Fix no default
  display of ip4ip6 tunnels
 - e48f73d6a5e90d2f883e15ccedf4f53d26bb6e74 missing arpd directory
 
@@ -655,7 +668,7 @@ rm -rf '%{buildroot}%{_docdir}'
 
 * Wed Feb  6 2008 Marcela Maslanova <mmaslano@redhat.com> - 2.6.23-3
 - rebuild without tetex files. It isn't working in rawhide yet. Added
-  new source for ps files. 
+  new source for ps files.
 - #431179 backward compatibility for previous iproute versions
 
 * Mon Jan 21 2008 Marcela Maslanova <mmaslano@redhat.com> - 2.6.23-2
@@ -707,7 +720,7 @@ rm -rf '%{buildroot}%{_docdir}'
 - bug fix for xfrm monitor
 - alignment fixes for cris
 - documentation corrections
-        
+
 * Mon Oct  2 2006 Radek Vokal <rvokal@redhat.com> - 2.6.16-7
 - fix ip.8 man page, add initcwnd option
 
@@ -757,7 +770,7 @@ rm -rf '%{buildroot}%{_docdir}'
 - use tc manpages and cbq.init from source tarball (#172851)
 
 * Thu Nov 10 2005 Radek Vokal <rvokal@redhat.com> 2.6.14-8
-- new upstream source 
+- new upstream source
 
 * Mon Oct 31 2005 Radek Vokal <rvokal@redhat.com> 2.6.14-7
 - add warning to ip tunnel add command (#128107)
@@ -773,7 +786,7 @@ rm -rf '%{buildroot}%{_docdir}'
 - add RPM_OPT_FLAGS
 
 * Mon Sep 19 2005 Radek Vokal <rvokal@redhat.com> 2.6.14-3
-- forget to apply the patch :( 
+- forget to apply the patch :(
 
 * Mon Sep 19 2005 Radek Vokal <rvokal@redhat.com> 2.6.14-2
 - make ip help work again (#168449)
@@ -792,7 +805,7 @@ rm -rf '%{buildroot}%{_docdir}'
 
 * Tue May 24 2005 Radek Vokal <rvokal@redhat.com> 2.6.11-2
 - removed useless initvar patch (#150798)
-- new upstream source 
+- new upstream source
 
 * Tue Mar 15 2005 Radek Vokal <rvokal@redhat.com> 2.6.11-1
 - update to iproute-2.6.11
@@ -811,7 +824,7 @@ rm -rf '%{buildroot}%{_docdir}'
 
 * Tue Nov 16 2004 Radek Vokal <rvokal@redhat.com> 2.6.9-4
 - source file updated from snapshot version
-- endian patch adding <endian.h> 
+- endian patch adding <endian.h>
 
 * Sat Sep 18 2004 Joshua Blanton <jblanton@cs.ohiou.edu> 2.6.9-3
 - added installation of netem module for tc
@@ -837,7 +850,7 @@ rm -rf '%{buildroot}%{_docdir}'
 * Wed Apr 21 2004 Phil Knirsch <pknirsch@redhat.com> 2.4.7-14
 - Fixed -f option for ss (#118355).
 - Small description fix (#110997).
-- Added initialization of some vars (#74961). 
+- Added initialization of some vars (#74961).
 - Added patch to initialize "default" rule as well (#60693).
 
 * Fri Feb 13 2004 Elliot Lee <sopwith@redhat.com>
@@ -890,7 +903,7 @@ rm -rf '%{buildroot}%{_docdir}'
 - fix build problem in beehive if kernel-sources is not installed
 
 * Fri May 25 2001 Helge Deller <hdeller@redhat.de>
-- updated to iproute2-2.2.4-now-ss001007.tar.gz 
+- updated to iproute2-2.2.4-now-ss001007.tar.gz
 - bzip2 source tar file
 - "License" replaces "Copyright"
 - added "BuildPrereq: tetex-latex tetex-dvips psutils"
